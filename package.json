@@ -4,8 +4,8 @@
   "description": "test object types (similar to React.PropTypes)",
   "main": "index.js",
   "scripts": {
-    "test-cov": "node ./node_modules/istanbul/lib/cli.js cover node_modules/mocha/bin/_mocha -- --reporter dot",
-    "test-travis": "node ./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha -- -R spec",
+    "test-cov":    "node ./node_modules/istanbul/lib/cli.js cover node_modules/mocha/bin/_mocha -- --reporter dot --require babel/register",
+    "test-travis": "node ./node_modules/istanbul/lib/cli.js cover node_modules/mocha/bin/_mocha -- -R spec --require babel/register",
     "test": "mocha --recursive --compilers js:babel/register"
   },
   "repository": {
