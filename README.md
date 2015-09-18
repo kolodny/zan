@@ -7,9 +7,25 @@ zan
 [![Downloads][downloads-image]][downloads-url]
 
 
-Test an object matches a type
+Test a value against a type
 
-See [test.js](test.js) for usage
+### Usage
+
+```js
+import { check, types, createCustomChecker } from 'zan';
+
+check(types.bool, true); // null
+check(types.bool, 123); // returns Error object
+
+check(types.shape({name: types.string}), {name: 'Me'}); // null
+check(types.shape({name: types.string}), {}); // returns Error object
+check(types.shape({name: types.string}), {name: 'Me', age: 22}); // null
+check(types.exactShape({name: types.string}), {name: 'Me', age: 22}); // returns Error object
+```
+
+`check` is curry-able so `const numberChecker = check(types.number); numberChecker(22);` works
+
+see [test.js](test.js) from more usage
 
 
 [npm-image]: https://img.shields.io/npm/v/zan.svg?style=flat-square

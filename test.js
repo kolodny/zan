@@ -1,37 +1,60 @@
-var assert = require('assert');
+import expect from 'expect';
+
+import { check, types, createCustomChecker } from './';
+
+const {
+  bool,
+  func,
+  number,
+  string,
+  array,
+  object,
+  objectOf,
+  arrayOf,
+  instanceOf,
+  oneOf,
+  any,
+  oneOfType,
+  shape,
+  exactShape
+} = types;
+
 var zan = require('./');
 
-describe('zan', function() {
-  describe('simple types', function() {
-    var types = [
-      ['bool', true, 1],
-      ['func', function() {}, 'logger'],
-      ['number', 123, '123'],
-      ['string', 'foo', /foo/],
-    ];
-    types.forEach(function(type) {
-      it('can check if an object is ' + type[0], function() {
+describe('zan', () => {
+  it('is curry-able', () => {
+    expect(  check(number)(123)  ).toBe(null);
+  });
 
-        assert.doesNotThrow(function() {
-          zan.check(zan.types[type[0]], type[1]);
-        });
+  describe('simple types', () => {
 
-        assert.throws(function() {
-          zan.check(zan.types[type[0]], type[2]);
-        });
-
-      });
+    it('can check if a value is a boolean', () => {
+      expect(check(bool, true)).toBe(null);
+      expect(check(bool, 1)).toBeAn(Error);
     });
 
-    it('is able to produce custom types', function() {
-      var custom = zan.validator(function(arg) { return /(foo|bar)g?/.test(arg) });
-      zan.check(custom, 'foo');
-      zan.check(custom, 'foog');
-      zan.check(custom, 'bar');
-      zan.check(custom, 'barg');
-      assert.throws(function() {
-        zan.check(custom, 'fog');
-      });
+    it('can check if a value is a function', () => {
+      expect(check(func, () => {})).toBe(null);
+      expect(check(func, 'str')).toBeAn(Error);
+    });
+
+    it('can check if a value is a number', () => {
+      expect(check(number, 123)).toBe(null);
+      expect(check(number, '123')).toBeAn(Error);
+    });
+
+    it('can check if a value is a string', () => {
+      expect(check(string, 'foo')).toBe(null);
+      expect(check(string, /foo/)).toBeAn(Error);
+    });
+
+    it('is able to produce custom checkers', function() {
+      var customValidator = createCustomChecker(value => /(foo|bar)g?/.test(value) );
+      expect(check(customValidator, 'foo')).toBe(null);
+      expect(check(customValidator, 'foog')).toBe(null);
+      expect(check(customValidator, 'bar')).toBe(null);
+      expect(check(customValidator, 'barg')).toBe(null);
+      expect(check(customValidator, 'fog')).toBeAn(Error);
     });
 
   });
@@ -40,40 +63,30 @@ describe('zan', function() {
 
     describe('has a type `array` that', function() {
       it('can check if an object is an array', function() {
-        zan.check(zan.types.array, ['a', 22]);
-        assert.throws(function() {
-          zan.check(zan.types.array, {a: 22});
-        });
+        expect(check(array, ['a', 22])).toBe(null);
+        expect(check(array, {a: 22})).toBeAn(Error)
       });
     });
 
     describe('has a type `object` that', function() {
       it('can check if an object is an object', function() {
-        zan.check(zan.types.object, {a: 22});
-        assert.throws(function() {
-          zan.check(zan.types.object, ['a', 22]);
-        });
+        expect(check(object, {a: 22})).toBe(null);
+        expect(check(object, ['a', 22])).toBeAn(Error)
       });
     });
 
     describe('has a type `objectOf` that', function() {
       it('can check if an object is an objectOf', function() {
-        zan.check(zan.types.objectOf(zan.types.number), {id: 22});
-        assert.throws(function() {
-          zan.check(zan.types.objectOf(zan.types.number), {id: '22'});
-        });
+        expect(check(objectOf(number), {id: 22})).toBe(null);
+        expect(check(objectOf(number), {id: '22'})).toBeAn(Error)
       });
     });
 
     describe('has a type `arrayOf` that', function() {
       it('can check if an object is an arrayOf', function() {
-        zan.check(zan.types.arrayOf(zan.types.number), [22]);
-        assert.throws(function() {
-          zan.check(zan.types.arrayOf(zan.types.number), ['22']);
-        });
-        assert.throws(function() {
-          zan.check(zan.types.arrayOf(zan.types.number), [22, '22']);
-        });
+        expect(check(arrayOf(number), [22])).toBe(null);
+        expect(check(arrayOf(number), ['22'])).toBeAn(Error)
+        expect(check(arrayOf(number), [22, '22'])).toBeAn(Error)
       });
     });
 
@@ -81,66 +94,54 @@ describe('zan', function() {
       it('can check if an object is an instanceOf', function() {
         var C = function C() {};
         var c = new C();
-        zan.check(zan.types.instanceOf(C), c);
-        assert.throws(function() {
-          zan.check(zan.types.instanceOf(C), {});
-        });
+        expect(check(instanceOf(C), c)).toBe(null);
+        expect(check(instanceOf(C), {})).toBeAn(Error)
       });
     });
 
     describe('has a type `oneOf` that', function() {
       it('can check if an object is oneOf a list of specific value', function() {
-        zan.check(zan.types.oneOf(['foo', 'bar']), 'bar');
-        assert.throws(function() {
-          zan.check(zan.types.oneOf(['foo', 'bar']), 'baz');
-        });
+        expect(check(oneOf(['foo', 'bar']), 'bar')).toBe(null);
+        expect(check(oneOf(['foo', 'bar']), 'baz')).toBeAn(Error)
       });
     });
 
     describe('has a type `any` that', function() {
       it('can check if an object anything', function() {
-        zan.check(zan.types.any, 'bar');
-        assert.throws(function() {
-          zan.check(zan.types.any, null);
-        });
+        expect(check(any, 'bar')).toBe(null);
+        expect(check(any, null)).toBeAn(Error)
       });
     });
 
     describe('has a type `oneOfType` that', function() {
       it('can check if an object is oneOfType a list of specific value', function() {
-        var stringOrFunction = zan.types.oneOfType([zan.types.string, zan.types.func]);
-        zan.check(stringOrFunction, 'foo');
-        zan.check(stringOrFunction, function() {});
-        assert.throws(function() {
-          zan.check(stringOrFunction, 123);
-        });
+        var stringOrFunction = oneOfType([string, func]);
+        expect(check(stringOrFunction, 'foo')).toBe(null);
+        expect(check(stringOrFunction, function() {})).toBe(null);
+        expect(check(stringOrFunction, 123)).toBeAn(Error)
       });
     });
 
     describe('has a type `oneOfType` that', function() {
       it('can check if an object is oneOfType a list of specific value', function() {
-        var stringOrFunction = zan.types.oneOfType([zan.types.string, zan.types.func]);
-        zan.check(stringOrFunction, 'foo');
-        zan.check(stringOrFunction, function() {});
-        assert.throws(function() {
-          zan.check(stringOrFunction, 123);
-        });
+        var stringOrFunction = oneOfType([string, func]);
+        expect(check(stringOrFunction, 'foo')).toBe(null);
+        expect(check(stringOrFunction, function() {})).toBe(null);
+        expect(check(stringOrFunction, 123)).toBeAn(Error)
       });
     });
 
     describe('has a type `shape` that', function() {
       it('can check if an object matches a shape', function() {
-        var shape = zan.types.shape({
-          name: zan.types.string,
-          age: zan.types.number,
-          address: zan.types.shape({
-            street: zan.types.string
+        var myShape = shape({
+          name: string,
+          age: number,
+          address: shape({
+            street: string
           })
         });
-        zan.check(shape, {extra: 123, name: 'Bob', age: 99, address: {street: '2nd Ave'}});
-        assert.throws(function() {
-          zan.check(shape, {extra: 123, name: 'Bob', age: 99, address: {street: 2}});
-        });
+        expect(check(myShape, {extra: 123, name: 'Bob', age: 99, address: {street: '2nd Ave'}})).toBe(null);
+        expect(check(myShape, {extra: 123, name: 'Bob', age: 99, address: {street: 2}})).toBeAn(Error)
       });
     });
 
@@ -148,23 +149,17 @@ describe('zan', function() {
 
   describe('has a type `exactShape` that', function() {
     it('can check if an object exactly matches a exactShape', function() {
-      var exactShape = zan.types.exactShape({
-        name: zan.types.string,
-        age: zan.types.number,
-        address: zan.types.exactShape({
-          street: zan.types.string
+      var myExactShape = exactShape({
+        name: string,
+        age: number,
+        address: exactShape({
+          street: string
         })
       });
-      zan.check(exactShape, {name: 'Bob', age: 99, address: {street: '2nd Ave'}});
-      assert.throws(function() {
-        zan.check(exactShape, {extra: 123, name: 'Bob', age: 99, address: {street: '2nd Ave'}});
-      });
-      assert.throws(function() {
-        zan.check(exactShape, {age: 99, address: {street: '2nd Ave'}});
-      });
-      assert.throws(function() {
-        zan.check(exactShape, {name: 'Bob', age: 99, address: {street: 2}});
-      });
+      expect(check(myExactShape, {name: 'Bob', age: 99, address: {street: '2nd Ave'}})).toBe(null);
+      expect(check(myExactShape, {extra: 123, name: 'Bob', age: 99, address: {street: '2nd Ave'}})).toBeAn(Error)
+      expect(check(myExactShape, {age: 99, address: {street: '2nd Ave'}})).toBeAn(Error)
+      expect(check(myExactShape, {name: 'Bob', age: 99, address: {street: 2}})).toBeAn(Error)
     });
   });
 

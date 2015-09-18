@@ -8,13 +8,14 @@ Object.keys(propTypes).forEach(function(key) {
   };
 });
 
-exports.validator = function(isValid) {
+exports.createCustomChecker = function(isValid) {
   return function(props, propName, componentName, location, propFullName) {
     if (!isValid(props[propName])) {
       return new Error(
         'Invalid `' + propName + '` supplied to `' + componentName + '`'
       )
     }
+    return null;
   }
 }
 
@@ -38,14 +39,16 @@ types.exactShape = function(shape) {
   return function(props, propName, componentName, location, propFullName) {
     var diff = keysDiff(shape, props[propName]);
     if (diff) {
-      throw new Error(diff);
+      return new Error(diff);
     }
     return types.shape(shape).apply(this, arguments);
   }
 }
 
-exports.check = function(propTypeValidator, value) {
-  var testObj = { value: value }
-  var result = propTypeValidator(testObj, 'value', 'zan check');
-  if (result) throw result;
+exports.check = function(propTypeValidator) {
+  var curriedCheck = function(value) {
+    var testObj = { value: value };
+    return propTypeValidator(testObj, 'value', 'zan check');
+  };
+  return arguments.length > 1 ? curriedCheck(arguments[1]) : curriedCheck;
 }

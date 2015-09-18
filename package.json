@@ -1,12 +1,12 @@
 {
   "name": "zan",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "test object types (similar to React.PropTypes)",
   "main": "index.js",
   "scripts": {
     "test-cov": "node ./node_modules/istanbul/lib/cli.js cover node_modules/mocha/bin/_mocha -- --reporter dot",
     "test-travis": "node ./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha -- -R spec",
-    "test": "mocha"
+    "test": "mocha --recursive --compilers js:babel/register"
   },
   "repository": {
     "type": "git",
@@ -26,7 +26,9 @@
   },
   "homepage": "https://github.com/kolodny/zan#readme",
   "devDependencies": {
+    "babel": "^5.8.23",
     "coveralls": "^2.11.4",
+    "expect": "^1.10.0",
     "istanbul": "^0.3.20",
     "mocha": "^2.3.2"
   },
