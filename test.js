@@ -33,6 +33,15 @@ describe('zan', () => {
     expect(  check(number.isOptional, 'x')  ).toBeAn(Error);
   });
 
+  it('can do optional shapes',() => {
+    expect( check(shape({num: number}), {num: 22} )).toBe(null);
+    expect( check(shape({num: number}), {num: 'x'} )).toBeAn(Error);
+    expect( check(shape({num: number}), null )).toBeAn(Error);
+    expect( check(shape({num: number}).isOptional, null )).toBe(null);
+    expect( check(exactShape({num: number}), null )).toBeAn(Error);
+    expect( check(exactShape({num: number}).isOptional, null )).toBe(null);
+  });
+
   describe('simple types', () => {
 
     it('can check if a value is a boolean', () => {

@@ -3,10 +3,16 @@ var propTypes = require('prop-types');
 var types = exports.types = {};
 
 Object.keys(propTypes).forEach(function(key) {
-  types[key] = propTypes[key].isRequired || function(arg) {
-    return propTypes[key](arg).isRequired;
-  };
-  types[key].isOptional = propTypes[key];
+  if (propTypes[key].isRequired) {
+    types[key] = propTypes[key].isRequired;
+    types[key].isOptional = propTypes[key];
+  } else {
+    types[key] = function(arg) {
+      var checker = propTypes[key](arg);
+      checker.isRequired.isOptional = checker;
+      return checker.isRequired;
+    };
+  }
 });
 
 exports.createCustomChecker = function(isValid) {
@@ -37,13 +43,21 @@ function keysDiff(o1, o2) {
 }
 
 types.exactShape = function(shape) {
-  return function(props, propName, componentName, location, propFullName) {
-    var diff = keysDiff(shape, props[propName]);
-    if (diff) {
-      return new Error(diff);
-    }
-    return types.shape(shape).apply(this, arguments);
+  var makeChecker = function(isOptional) {
+    return function(props, propName, componentName, location, propFullName) {
+      if (isOptional && props[propName] == null) {
+        return null;
+      }
+      var diff = keysDiff(shape, props[propName]);
+      if (diff) {
+        return new Error(diff);
+      }
+      return types.shape(shape).apply(this, arguments);
+    };
   }
+  var checker = makeChecker(false);
+  checker.isOptional = makeChecker(true);
+  return checker;
 }
 
 exports.check = function(propTypeValidator) {
