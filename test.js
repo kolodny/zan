@@ -26,6 +26,13 @@ describe('zan', () => {
     expect(  check(number)(123)  ).toBe(null);
   });
 
+  it('can do optional checks',() => {
+    expect(  check(number.isOptional, 123)  ).toBe(null);
+    expect(  check(number.isOptional, undefined)  ).toBe(null);
+    expect(  check(number.isOptional, null)  ).toBe(null);
+    expect(  check(number.isOptional, 'x')  ).toBeAn(Error);
+  });
+
   describe('simple types', () => {
 
     it('can check if a value is a boolean', () => {

@@ -6,6 +6,7 @@ Object.keys(propTypes).forEach(function(key) {
   types[key] = propTypes[key].isRequired || function(arg) {
     return propTypes[key](arg).isRequired;
   };
+  types[key].isOptional = propTypes[key];
 });
 
 exports.createCustomChecker = function(isValid) {

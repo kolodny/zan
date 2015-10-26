@@ -6,8 +6,34 @@ zan
 [![Test coverage][coveralls-image]][coveralls-url]
 [![Downloads][downloads-image]][downloads-url]
 
+Drop in replacement for `React.PropTypes`:
 
-Test a value against a type
+```js
+import { types } from 'zan';
+const { string, number } = types;
+React.createClass({
+  propTypes: {
+    name: string,
+    age: number.isOptional
+  },
+  render() {
+    // ...
+  },
+});
+```
+
+The primary differences this has with `React.PropTypes` is that
+
+1. `zan` exposes an `exactShape` type.
+2. checks by default are `isRequired` already and they each expose an `isOptional` method (except for `exactShape`)
+3. `zan` exposes a `createCustomChecker` method which can be used as follows:
+
+```js
+const urlString = createCustomChecker(value => /^https?:/.test(value) );
+```
+
+
+This module also exposes an a checker so you can check types manually without React
 
 ### Usage
 
