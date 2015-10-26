@@ -25,7 +25,7 @@ React.createClass({
 The primary differences this has with `React.PropTypes` is that
 
 1. `zan` exposes an `exactShape` type.
-2. checks by default are `isRequired` already and they each expose an `isOptional` method (except for `exactShape`)
+2. checks by default are `isRequired` already and they each expose an `isOptional` method
 3. `zan` exposes a `createCustomChecker` method which can be used as follows:
 
 ```js
