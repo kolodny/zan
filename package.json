@@ -33,6 +33,6 @@
     "mocha": "^2.3.2"
   },
   "peerDependencies": {
-    "react": "^0.12.0"
+    "react": ">=0.12.0"
   }
 }
