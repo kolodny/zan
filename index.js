@@ -1,4 +1,4 @@
-var propTypes = require('prop-types');
+var propTypes = require('react').PropTypes;
 
 var types = exports.types = {};
 
@@ -14,6 +14,11 @@ Object.keys(propTypes).forEach(function(key) {
     };
   }
 });
+
+if (types.element) {
+  types.node = types.element;
+  types.element = undefined;
+}
 
 exports.createCustomChecker = function(isValid) {
   return function(props, propName, componentName, location, propFullName) {
