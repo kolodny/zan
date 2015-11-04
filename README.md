@@ -32,6 +32,39 @@ The primary differences this has with `React.PropTypes` is that
 const urlString = createCustomChecker(value => /^https?:/.test(value) );
 ```
 
+This module also exposes a recursive checker so you don't need to use things like `arrayOf` and `shape`:
+
+```js
+import { types, recursive } from 'zan';
+const { number, string } = types;
+
+const propTypes = recursive({
+  myAge: number,
+  myFavoriteNumbers: [number],
+  treeNode: {
+    value: number
+  },
+  buddies: [{
+    name: string,
+    age: number,
+  }],
+});
+
+// which is equivalent to:
+
+const propTypes = {
+  myAge: number,
+  myFavoriteNumbers: arrayOf(number),
+  treeNode: shape({
+    value: number,
+  }),
+  buddies: arrayOf(shape({
+    name: string,
+    age: number,
+  })),
+};
+
+```
 
 This module also exposes an a checker so you can check types manually without React
 

@@ -4,7 +4,9 @@ var types = exports.types = {};
 
 Object.keys(propTypes).forEach(function(key) {
   if (propTypes[key].isRequired) {
-    types[key] = propTypes[key].isRequired;
+    types[key] = function() {
+      return propTypes[key].isRequired.apply(null, arguments);
+    };
     types[key].isOptional = propTypes[key];
   } else {
     types[key] = function(arg) {
@@ -71,4 +73,21 @@ exports.check = function(propTypeValidator) {
     return propTypeValidator(testObj, 'value', 'zan check');
   };
   return arguments.length > 1 ? curriedCheck(arguments[1]) : curriedCheck;
+}
+
+var recursive = exports.recursive = function(object, isRecursive) {
+  if (typeof object !== 'object' || object === null) {
+    return object;
+  }
+  if (object instanceof Array) {
+    return types.arrayOf(recursive(object[0], true));
+  }
+
+  var ret = {};
+  for (var i in object) {
+    if (Object.prototype.hasOwnProperty.call(object, i)) {
+      ret[i] = recursive(object[i], true);
+    }
+  }
+  return isRecursive ? types.shape(ret) : ret;
 }

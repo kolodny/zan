@@ -3,7 +3,7 @@ import React from 'react';
 
 const nodeInstance = <div></div>;
 
-import { check, types, createCustomChecker } from './';
+import { check, types, createCustomChecker, recursive } from './';
 
 const {
   any,
@@ -187,6 +187,43 @@ describe('zan', () => {
       expect(check(myExactShape, {age: 99, address: {street: '2nd Ave'}})).toBeAn(Error)
       expect(check(myExactShape, {name: 'Bob', age: 99, address: {street: 2}})).toBeAn(Error)
     });
+  });
+
+  describe('recursive', () => {
+    it("doesn't alter 1 level deep objects", () => {
+      const shallowObject = {a: 1, b: '2', c: null, d: () => {}};
+      expect( recursive(shallowObject) ).toEqual(shallowObject);
+    });
+    it('can check at least one level', () => {
+      const deepChecker = recursive({
+        value: {
+          level1: string,
+        }
+      }).value;
+      expect( check(deepChecker, {level1: 123} )).toBeAn(Error);
+      expect( check(deepChecker, {level1: '123'} )).toBeFalsy();
+    });
+    it('can check until the last turtle', () => {
+      const deepChecker = recursive({
+        value: {
+          foo: number,
+          level1: {
+            level2: [{
+              level3: [[string]]
+            }]
+          }
+        }
+      }).value;
+      expect( check(deepChecker, {foo: '3', level1: { level2: [{ level3: [['abc'], [], ['xyz']] }] }} )).toBeAn(Error);
+      expect( check(deepChecker, {foo: 3, level1: { level99: [{ level3: [['abc'], [], ['xyz']] }] }} )).toBeAn(Error);
+      expect( check(deepChecker, {foo: 3, level1: { level2: [{ level3: ['abc'] }] }} )).toBeAn(Error);
+      expect( check(deepChecker, {foo: 3, level1: { level2: [{ level3: [] }] }} )).toBeFalsy();
+      expect( check(deepChecker, {foo: 3, level1: { level2: [{ level3: [['abc'], [], ['xyz']] }] }} )).toBeFalsy();
+    });
+  });
+
+  it("doesn't alter React.PropTypes", () => {
+    expect(React.PropTypes.number.isRequired.isOptional).toBeFalsy();
   });
 
 
