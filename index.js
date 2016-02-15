@@ -23,15 +23,15 @@ if (types.element) {
 }
 
 exports.createCustomChecker = function(isValid) {
-  return function(props, propName, componentName, location, propFullName) {
+  return function(props, propName, componentName, location) {
     if (!isValid(props[propName])) {
       return new Error(
-        'Invalid `' + propName + '` supplied to `' + componentName + '`'
-      )
+        'Invalid ' + location + ' `' + propName + '` supplied to `' + componentName + '`.'
+      );
     }
     return null;
   }
-}
+};
 
 function keysDiff(o1, o2) {
   var map1 = {};
@@ -61,19 +61,22 @@ types.exactShape = function(shape) {
       }
       return types.shape(shape).apply(this, arguments);
     };
-  }
+  };
   var checker = makeChecker(false);
   checker.isOptional = makeChecker(true);
   return checker;
-}
+};
 
 exports.check = function(propTypeValidator) {
-  var curriedCheck = function(value) {
+  var curriedCheck = function(value, label) {
+    label = label || 'zan-check';
     var testObj = { value: value };
-    return propTypeValidator(testObj, 'value', 'zan check');
+    return propTypeValidator(testObj, 'value', label, 'prop');
   };
-  return arguments.length > 1 ? curriedCheck(arguments[1]) : curriedCheck;
-}
+  return arguments.length > 1
+    ? curriedCheck.apply(null, Array.prototype.slice.call(arguments, 1))
+    : curriedCheck;
+};
 
 var recursive = exports.recursive = function(object, isRecursive) {
   if (typeof object !== 'object' || object === null) {
@@ -90,4 +93,4 @@ var recursive = exports.recursive = function(object, isRecursive) {
     }
   }
   return isRecursive ? types.shape(ret) : ret;
-}
+};

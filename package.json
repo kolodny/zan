@@ -4,7 +4,7 @@
   "description": "test object types (similar to React.PropTypes)",
   "main": "index.js",
   "scripts": {
-    "test-cov":    "node ./node_modules/istanbul/lib/cli.js cover node_modules/mocha/bin/_mocha -- --reporter dot --require babel/register",
+    "test-cov": "node ./node_modules/istanbul/lib/cli.js cover node_modules/mocha/bin/_mocha -- --reporter dot --require babel/register",
     "test-travis": "node ./node_modules/istanbul/lib/cli.js cover node_modules/mocha/bin/_mocha -- -R spec --require babel/register",
     "test": "mocha --recursive --compilers js:babel/register"
   },
@@ -30,7 +30,8 @@
     "coveralls": "^2.11.4",
     "expect": "^1.10.0",
     "istanbul": "^0.3.20",
-    "mocha": "^2.3.2"
+    "mocha": "^2.3.2",
+    "react": "^0.14.7"
   },
   "peerDependencies": {
     "react": ">=0.12.0"
