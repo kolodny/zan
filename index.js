@@ -11,8 +11,7 @@ Object.keys(propTypes).forEach(function(key) {
 var createCustomChecker = exports.createCustomChecker = function(creator, args) {
   args = Array.prototype.slice.apply(args || []);
   return createRequiredChecker(function(isOptional) {
-    var checker = creator.apply(null, [isOptional].concat(args));
-    return addInspectors(isOptional, args, checker);
+    return addInspectors(isOptional, args, creator(isOptional));
   });
 };
 
