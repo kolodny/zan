@@ -4,24 +4,37 @@ var types = exports.types = {};
 
 Object.keys(propTypes).forEach(function(key) {
   types[key] = propTypes[key].isRequired
-    ? wrapChecker(propTypes[key])
-    : wrapCheckerCreator(propTypes[key]);
+    ? wrapReactChecker(propTypes[key])
+    : wrapReactCheckerCreator(propTypes[key]);
 });
 
-exports.createCustomChecker = function(isValid) {
-  return function(props, propName, componentName, location) {
-    if (!isValid(props[propName])) {
-      return new Error(
-        'Invalid ' + location + ' `' + propName + '` supplied to `' + componentName + '`.'
-      );
-    }
-    return null;
-  }
+var createCustomChecker = exports.createCustomChecker = function(creator, args) {
+  args = Array.prototype.slice.apply(args || []);
+  return createRequiredChecker(function(isOptional) {
+    var checker = creator.apply(null, [isOptional].concat(args));
+    return addInspectors(isOptional, args, checker);
+  });
+};
+
+exports.createSimpleChecker = function(checkIsValid) {
+  return createCustomChecker(function(isOptional) {
+    return function(props, propName, componentName, location) {
+      if (isOptional && props[propName] == null) {
+        return null;
+      }
+      if (!checkIsValid(props[propName])) {
+        return new Error(
+          'Invalid ' + location + ' `' + propName + '` supplied to `' + componentName + '`.'
+        );
+      }
+      return null;
+    };
+  }, arguments);
 };
 
 types.exactShape = function(shape) {
-  return createRequiredChecker(function(isOptional) {
-    return addInspectors(isOptional, [shape], function (props, propName, componentName, location) {
+  return createCustomChecker(function(isOptional) {
+    return function(props, propName, componentName, location) {
       if (isOptional && props[propName] == null) {
         return null;
       }
@@ -30,14 +43,14 @@ types.exactShape = function(shape) {
         return new Error('Invalid ' + location + ' `' + propName + '` supplied to `' + componentName + '`: ' + diff + '.');
       }
       return types.shape(shape).apply(this, arguments);
-    });
-  });
+    };
+  }, arguments)
 };
 
 exports.check = function(propTypeValidator) {
   var curriedCheck = function(value, label) {
     label = label || 'zan-check';
-    var testObj = { value: value };
+    var testObj = {value: value};
     return propTypeValidator(testObj, 'value', label, 'prop');
   };
   return arguments.length > 1
@@ -64,14 +77,15 @@ var recursive = exports.recursive = function(object, isRecursive) {
 
 // HELPERS /////
 
-function wrapCheckerCreator(reactCheckerCreator) {
+
+function wrapReactCheckerCreator(reactCheckerCreator) {
   return function() {
     var reactChecker = reactCheckerCreator.apply(null, arguments);
-    return wrapChecker(reactChecker, arguments);
+    return wrapReactChecker(reactChecker, arguments);
   };
 }
 
-function wrapChecker(reactChecker, args) {
+function wrapReactChecker(reactChecker, args) {
   return createRequiredChecker(function(isOptional) {
     return addInspectors(isOptional, args, function() {
       return isOptional

@@ -3,7 +3,7 @@ import React from 'react';
 
 const nodeInstance = <div></div>;
 
-import { check, types, createCustomChecker, recursive } from './';
+import { check, types, createSimpleChecker, recursive } from './';
 
 const {
   any,
@@ -104,14 +104,22 @@ describe('zan', () => {
     });
 
     it('is able to produce custom checkers', function() {
-      var customValidator = createCustomChecker(value => /(foo|bar)g?/.test(value) );
+      var customValidator = createSimpleChecker(value => /(foo|bar)g?/.test(value) );
       expect(check(customValidator, 'foo')).toBeFalsy();
       expect(check(customValidator, 'foog')).toBeFalsy();
       expect(check(customValidator, 'bar')).toBeFalsy();
       expect(check(customValidator, 'barg')).toBeFalsy();
       expect(check(customValidator, 'fog')).toBeAn(Error);
     });
+  });
 
+  describe('custom validators', () => {
+    it ('should have isOptional and isRequired extentions', () => {
+      var customValidator = createSimpleChecker(value => /(foo|bar)g?/.test(value) );
+      expect(check(customValidator, null)).toBeAn(Error);
+      expect(check(customValidator.isRequired, null)).toBeAn(Error);
+      expect(check(customValidator.isOptional, null)).toBeFalsy();
+    });
   });
 
   describe('complex types', function() {
