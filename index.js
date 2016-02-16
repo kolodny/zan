@@ -11,7 +11,13 @@ Object.keys(propTypes).forEach(function(key) {
 var createCustomChecker = exports.createCustomChecker = function(creator, args, type) {
   args = Array.prototype.slice.apply(args || []);
   return createRequiredChecker(function(isOptional) {
-    return addInspectors(isOptional, args, type, creator(isOptional));
+    var checker = creator(isOptional);
+    return addInspectors(isOptional, args, type, function(props, propName) {
+      if (isOptional && props[propName] == null) {
+        return null;
+      }
+      return checker.apply(null, arguments);
+    });
   });
 };
 
@@ -26,9 +32,6 @@ var createCustomCheckerCreator = exports.createCustomChecker = function(creator)
 
 exports.createSimpleChecker = createCustomCheckerCreator(function(isOptional, checkIsValid) {
   return function(props, propName, componentName, location) {
-    if (isOptional && props[propName] == null) {
-      return null;
-    }
     if (!checkIsValid(props[propName])) {
       return new Error(
         'Invalid ' + location + ' `' + propName + '` supplied to `' + componentName + '`.'
@@ -40,9 +43,6 @@ exports.createSimpleChecker = createCustomCheckerCreator(function(isOptional, ch
 
 types.exactShape = createCustomCheckerCreator(function(isOptional, shape) {
   return function(props, propName, componentName, location) {
-    if (isOptional && props[propName] == null) {
-      return null;
-    }
     var diff = keysDiff(shape, props[propName]);
     if (diff) {
       return new Error('Invalid ' + location + ' `' + propName + '` supplied to `' + componentName + '`: ' + diff + '.');
