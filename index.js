@@ -30,11 +30,6 @@ function wrapChecker(reactChecker) {
   return checker;
 }
 
-if (types.element) {
-  types.node = types.element;
-  types.element = undefined;
-}
-
 exports.createCustomChecker = function(isValid) {
   return function(props, propName, componentName, location) {
     if (!isValid(props[propName])) {
