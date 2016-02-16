@@ -8,43 +8,6 @@ Object.keys(propTypes).forEach(function(key) {
     : wrapCheckerCreator(propTypes[key]);
 });
 
-function wrapCheckerCreator(reactCheckerCreator) {
-  return function() {
-    var reactChecker = reactCheckerCreator.apply(null, arguments);
-    return wrapChecker(reactChecker, arguments);
-  };
-}
-
-function wrapChecker(reactChecker, args) {
-  return createRequiredChecker(function(isOptional) {
-    function checker() {
-      return isOptional
-        ? reactChecker.apply(null, arguments)
-        : reactChecker.isRequired.apply(null, arguments)
-    }
-    return addInspectors(checker, isOptional, args);
-  });
-}
-
-function addInspectors(checker, isOptional, args) {
-  checker.inspectIsOptional = function inspectIsOptional() {
-    return isOptional;
-  };
-  checker.inspectArgs = function inspectArgs() {
-    return args
-      ? Array.prototype.slice.apply(args)
-      : [];
-  };
-  return checker;
-}
-
-function createRequiredChecker(makeChecker) {
-  const checker = makeChecker(false);
-  checker.isOptional = makeChecker(true);
-  checker.isRequired = checker.isOptional.isRequired = checker;
-  return checker;
-}
-
 exports.createCustomChecker = function(isValid) {
   return function(props, propName, componentName, location) {
     if (!isValid(props[propName])) {
@@ -56,25 +19,9 @@ exports.createCustomChecker = function(isValid) {
   }
 };
 
-function keysDiff(o1, o2) {
-  var map1 = {};
-  var map2 = {};
-  for (var key in o1) if (Object.prototype.hasOwnProperty.call(o1, key)) map1[key] = true;
-  for (key in o2) if (Object.prototype.hasOwnProperty.call(o2, key)) {
-    map1[key] ? delete map1[key] : map2[key] = true;
-  }
-  var left = Object.keys(map1);
-  var right = Object.keys(map2);
-  if (left.length === 0 && right.length === 0) return null;
-  var errorMessages = [];
-  if (left.length) errorMessages.push('missing keys: ' + JSON.stringify(left));
-  if (right.length) errorMessages.push('extra keys: ' + JSON.stringify(right));
-  return errorMessages.join('\n');
-}
-
 types.exactShape = function(shape) {
   return createRequiredChecker(function(isOptional) {
-    function exactShapeChecker(props, propName, componentName, location) {
+    return addInspectors(isOptional, [shape], function (props, propName, componentName, location) {
       if (isOptional && props[propName] == null) {
         return null;
       }
@@ -83,8 +30,7 @@ types.exactShape = function(shape) {
         return new Error('Invalid ' + location + ' `' + propName + '` supplied to `' + componentName + '`: ' + diff + '.');
       }
       return types.shape(shape).apply(this, arguments);
-    }
-    return addInspectors(exactShapeChecker, isOptional, [shape]);
+    });
   });
 };
 
@@ -115,3 +61,58 @@ var recursive = exports.recursive = function(object, isRecursive) {
   }
   return isRecursive ? types.shape(ret) : ret;
 };
+
+// HELPERS /////
+
+function wrapCheckerCreator(reactCheckerCreator) {
+  return function() {
+    var reactChecker = reactCheckerCreator.apply(null, arguments);
+    return wrapChecker(reactChecker, arguments);
+  };
+}
+
+function wrapChecker(reactChecker, args) {
+  return createRequiredChecker(function(isOptional) {
+    return addInspectors(isOptional, args, function() {
+      return isOptional
+        ? reactChecker.apply(null, arguments)
+        : reactChecker.isRequired.apply(null, arguments)
+    });
+  });
+}
+
+function addInspectors(isOptional, args, checker) {
+  checker.inspectIsOptional = function inspectIsOptional() {
+    return isOptional;
+  };
+  checker.inspectArgs = function inspectArgs() {
+    return args
+      ? Array.prototype.slice.apply(args)
+      : [];
+  };
+  return checker;
+}
+
+function createRequiredChecker(makeChecker) {
+  const checker = makeChecker(false);
+  checker.isOptional = makeChecker(true);
+  checker.isRequired = checker.isOptional.isRequired = checker;
+  return checker;
+}
+
+function keysDiff(o1, o2) {
+  var map1 = {};
+  var map2 = {};
+  for (var key in o1) if (Object.prototype.hasOwnProperty.call(o1, key)) map1[key] = true;
+  for (key in o2) if (Object.prototype.hasOwnProperty.call(o2, key)) {
+    map1[key] ? delete map1[key] : map2[key] = true;
+  }
+  var left = Object.keys(map1);
+  var right = Object.keys(map2);
+  if (left.length === 0 && right.length === 0) return null;
+  var errorMessages = [];
+  if (left.length) errorMessages.push('missing keys: ' + JSON.stringify(left));
+  if (right.length) errorMessages.push('extra keys: ' + JSON.stringify(right));
+  return errorMessages.join('\n');
+}
+
