@@ -3,19 +3,32 @@ var propTypes = require('react').PropTypes;
 var types = exports.types = {};
 
 Object.keys(propTypes).forEach(function(key) {
-  if (propTypes[key].isRequired) {
-    types[key] = function() {
-      return propTypes[key].isRequired.apply(null, arguments);
-    };
-    types[key].isOptional = propTypes[key];
-  } else {
-    types[key] = function(arg) {
-      var checker = propTypes[key](arg);
-      checker.isRequired.isOptional = checker;
-      return checker.isRequired;
-    };
-  }
+  types[key] = propTypes[key].isRequired
+    ? wrapChecker(propTypes[key])
+    : wrapCheckerCreator(propTypes[key]);
 });
+
+function wrapCheckerCreator(reactCheckerCreator) {
+  return function createChecker() {
+    var checker = reactCheckerCreator.apply(null, arguments);
+    checker.isRequired.isOptional = checker;
+    return checker.isRequired;
+  };
+}
+
+function wrapChecker(reactChecker) {
+  function createChecker(isOptional) {
+    return function checker() {
+      return isOptional
+        ? reactChecker.apply(null, arguments)
+        : reactChecker.isRequired.apply(null, arguments)
+    }
+  }
+  const checker = createChecker(false);
+  checker.isOptional = createChecker(true);
+  checker.isRequired = checker.isOptional.isRequired = checker;
+  return checker;
+}
 
 if (types.element) {
   types.node = types.element;
@@ -64,6 +77,7 @@ types.exactShape = function(shape) {
   };
   var checker = makeChecker(false);
   checker.isOptional = makeChecker(true);
+  checker.isRequired = checker.isOptional.isRequired = checker;
   return checker;
 };
 

@@ -37,6 +37,18 @@ describe('zan', () => {
     expect(  check(number.isOptional, 'x')  ).toBeAn(Error);
   });
 
+  it('can convert optional checks to required checks', () => {
+    expect(check(number.isOptional.isRequired, null)).toBeAn(Error);
+    expect(check(shape({num: number}).isOptional.isRequired, null)).toBeAn(Error);
+    expect(check(exactShape({num: number}).isOptional.isRequired, null)).toBeAn(Error);
+  });
+
+  it('can convert optional checks to required checks and back again', () => {
+    expect(check(number.isOptional.isRequired.isOptional, null)).toBeFalsy();
+    expect(check(shape({num: number}).isOptional.isRequired.isOptional, null)).toBeFalsy();
+    expect(check(exactShape({num: number}).isOptional.isRequired.isOptional, null)).toBeFalsy();
+  });
+
   it('can do optional shapes',() => {
     expect( check(shape({num: number}), {num: 22} )).toBeFalsy();
     expect( check(shape({num: number}), {num: 'x'} )).toBeAn(Error);
