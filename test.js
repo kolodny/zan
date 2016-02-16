@@ -67,6 +67,15 @@ describe('zan', () => {
     expect(exactShape({num: number}).inspectArgs()).toEqual([{num: number}]);
   });
 
+  it ('can predictably inspect type type of an inspector', () => {
+    expect(number.inspectType()).toEqual(number);
+    expect(shape({num: number}).inspectType()).toEqual(shape);
+    expect(shape({num: number}.isOptional).inspectType()).toEqual(shape);
+    expect(shape({num: number}).isOptional.isRequired.inspectType()).toEqual(shape);
+    expect(exactShape({num: number}).inspectType()).toEqual(exactShape);
+    expect(exactShape({num: number}).isOptional.inspectType()).toEqual(exactShape);
+  });
+
   it('can do optional shapes',() => {
     expect( check(shape({num: number}), {num: 22} )).toBeFalsy();
     expect( check(shape({num: number}), {num: 'x'} )).toBeAn(Error);

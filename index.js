@@ -8,43 +8,48 @@ Object.keys(propTypes).forEach(function(key) {
     : wrapReactCheckerCreator(propTypes[key]);
 });
 
-var createCustomChecker = exports.createCustomChecker = function(creator, args) {
+var createCustomChecker = exports.createCustomChecker = function(creator, args, type) {
   args = Array.prototype.slice.apply(args || []);
   return createRequiredChecker(function(isOptional) {
-    return addInspectors(isOptional, args, creator(isOptional));
+    return addInspectors(isOptional, args, type, creator(isOptional));
   });
 };
 
-exports.createSimpleChecker = function(checkIsValid) {
-  return createCustomChecker(function(isOptional) {
-    return function(props, propName, componentName, location) {
-      if (isOptional && props[propName] == null) {
-        return null;
-      }
-      if (!checkIsValid(props[propName])) {
-        return new Error(
-          'Invalid ' + location + ' `' + propName + '` supplied to `' + componentName + '`.'
-        );
-      }
-      return null;
-    };
-  }, arguments);
+var createCustomCheckerCreator = exports.createCustomChecker = function(creator) {
+  return function checkerCreator() {
+    var args = Array.prototype.slice.apply(arguments);
+    return createCustomChecker(function(isOptional) {
+      return creator.apply(null, [isOptional].concat(args))
+    }, args, checkerCreator);
+  }
 };
 
-types.exactShape = function(shape) {
-  return createCustomChecker(function(isOptional) {
-    return function(props, propName, componentName, location) {
-      if (isOptional && props[propName] == null) {
-        return null;
-      }
-      var diff = keysDiff(shape, props[propName]);
-      if (diff) {
-        return new Error('Invalid ' + location + ' `' + propName + '` supplied to `' + componentName + '`: ' + diff + '.');
-      }
-      return types.shape(shape).apply(this, arguments);
-    };
-  }, arguments)
-};
+exports.createSimpleChecker = createCustomCheckerCreator(function(isOptional, checkIsValid) {
+  return function(props, propName, componentName, location) {
+    if (isOptional && props[propName] == null) {
+      return null;
+    }
+    if (!checkIsValid(props[propName])) {
+      return new Error(
+        'Invalid ' + location + ' `' + propName + '` supplied to `' + componentName + '`.'
+      );
+    }
+    return null;
+  };
+});
+
+types.exactShape = createCustomCheckerCreator(function(isOptional, shape) {
+  return function(props, propName, componentName, location) {
+    if (isOptional && props[propName] == null) {
+      return null;
+    }
+    var diff = keysDiff(shape, props[propName]);
+    if (diff) {
+      return new Error('Invalid ' + location + ' `' + propName + '` supplied to `' + componentName + '`: ' + diff + '.');
+    }
+    return types.shape(shape).apply(this, arguments);
+  };
+});
 
 exports.check = function(propTypeValidator) {
   var curriedCheck = function(value, label) {
@@ -78,15 +83,15 @@ var recursive = exports.recursive = function(object, isRecursive) {
 
 
 function wrapReactCheckerCreator(reactCheckerCreator) {
-  return function() {
+  return function checkerCreator() {
     var reactChecker = reactCheckerCreator.apply(null, arguments);
-    return wrapReactChecker(reactChecker, arguments);
+    return wrapReactChecker(reactChecker, arguments, checkerCreator);
   };
 }
 
-function wrapReactChecker(reactChecker, args) {
+function wrapReactChecker(reactChecker, args, type) {
   return createRequiredChecker(function(isOptional) {
-    return addInspectors(isOptional, args, function() {
+    return addInspectors(isOptional, args, type, function() {
       return isOptional
         ? reactChecker.apply(null, arguments)
         : reactChecker.isRequired.apply(null, arguments)
@@ -94,7 +99,13 @@ function wrapReactChecker(reactChecker, args) {
   });
 }
 
-function addInspectors(isOptional, args, checker) {
+function addInspectors(isOptional, args, type, checker) {
+  if (!checker) {
+    checker = type;
+  }
+  if (!type) {
+    type = checker;
+  }
   checker.inspectIsOptional = function inspectIsOptional() {
     return isOptional;
   };
@@ -102,6 +113,9 @@ function addInspectors(isOptional, args, checker) {
     return args
       ? Array.prototype.slice.apply(args)
       : [];
+  };
+  checker.inspectType = function() {
+    return type;
   };
   return checker;
 }
