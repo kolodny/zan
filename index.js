@@ -9,23 +9,38 @@ Object.keys(propTypes).forEach(function(key) {
 });
 
 function wrapCheckerCreator(reactCheckerCreator) {
-  return function createChecker() {
-    var checker = reactCheckerCreator.apply(null, arguments);
-    checker.isRequired.isOptional = checker;
-    return checker.isRequired;
+  return function() {
+    var reactChecker = reactCheckerCreator.apply(null, arguments);
+    return wrapChecker(reactChecker, arguments);
   };
 }
 
-function wrapChecker(reactChecker) {
-  function createChecker(isOptional) {
-    return function checker() {
+function wrapChecker(reactChecker, args) {
+  return createRequiredChecker(function(isOptional) {
+    function checker() {
       return isOptional
         ? reactChecker.apply(null, arguments)
         : reactChecker.isRequired.apply(null, arguments)
     }
-  }
-  const checker = createChecker(false);
-  checker.isOptional = createChecker(true);
+    return addInspectors(checker, isOptional, args);
+  });
+}
+
+function addInspectors(checker, isOptional, args) {
+  checker.inspectIsOptional = function inspectIsOptional() {
+    return isOptional;
+  };
+  checker.inspectArgs = function inspectArgs() {
+    return args
+      ? Array.prototype.slice.apply(args)
+      : [];
+  };
+  return checker;
+}
+
+function createRequiredChecker(makeChecker) {
+  const checker = makeChecker(false);
+  checker.isOptional = makeChecker(true);
   checker.isRequired = checker.isOptional.isRequired = checker;
   return checker;
 }
@@ -58,22 +73,19 @@ function keysDiff(o1, o2) {
 }
 
 types.exactShape = function(shape) {
-  var makeChecker = function(isOptional) {
-    return function(props, propName, componentName, location, propFullName) {
+  return createRequiredChecker(function(isOptional) {
+    function exactShapeChecker(props, propName, componentName, location) {
       if (isOptional && props[propName] == null) {
         return null;
       }
       var diff = keysDiff(shape, props[propName]);
       if (diff) {
-        return new Error(diff);
+        return new Error('Invalid ' + location + ' `' + propName + '` supplied to `' + componentName + '`: ' + diff + '.');
       }
       return types.shape(shape).apply(this, arguments);
-    };
-  };
-  var checker = makeChecker(false);
-  checker.isOptional = makeChecker(true);
-  checker.isRequired = checker.isOptional.isRequired = checker;
-  return checker;
+    }
+    return addInspectors(exactShapeChecker, isOptional, [shape]);
+  });
 };
 
 exports.check = function(propTypeValidator) {

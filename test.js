@@ -49,6 +49,24 @@ describe('zan', () => {
     expect(check(exactShape({num: number}).isOptional.isRequired.isOptional, null)).toBeFalsy();
   });
 
+  it ('can statically inspect if a type checker is requried or optional', () => {
+    expect(number.inspectIsOptional()).toEqual(false);
+    expect(number.isOptional.inspectIsOptional()).toEqual(true);
+    expect(number.isOptional.isRequired.inspectIsOptional()).toEqual(false);
+    expect(shape({num: number}).inspectIsOptional()).toEqual(false);
+    expect(shape({num: number}).isOptional.inspectIsOptional()).toEqual(true);
+    expect(shape({num: number}).isOptional.isRequired.inspectIsOptional()).toEqual(false);
+    expect(exactShape({num: number}).inspectIsOptional()).toEqual(false);
+    expect(exactShape({num: number}).isOptional.inspectIsOptional()).toEqual(true);
+    expect(exactShape({num: number}).isOptional.isRequired.inspectIsOptional()).toEqual(false);
+  });
+
+  it ('can statically inspect the arguments passed to a checker', () => {
+    expect(number.inspectArgs()).toEqual([]);
+    expect(shape({num: number}).inspectArgs()).toEqual([{num: number}]);
+    expect(exactShape({num: number}).inspectArgs()).toEqual([{num: number}]);
+  });
+
   it('can do optional shapes',() => {
     expect( check(shape({num: number}), {num: 22} )).toBeFalsy();
     expect( check(shape({num: number}), {num: 'x'} )).toBeAn(Error);
