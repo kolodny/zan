@@ -21,7 +21,7 @@ var createCustomChecker = exports.createCustomChecker = function(creator, args, 
   });
 };
 
-var createCustomCheckerCreator = exports.createCustomChecker = function(creator) {
+var createCustomCheckerCreator = exports.createCustomCheckerCreator = function(creator) {
   return function checkerCreator() {
     var args = Array.prototype.slice.apply(arguments);
     return createCustomChecker(function(isOptional) {
