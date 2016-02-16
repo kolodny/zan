@@ -25,12 +25,12 @@ var createCustomCheckerCreator = exports.createCustomCheckerCreator = function(c
   return function checkerCreator() {
     var args = Array.prototype.slice.apply(arguments);
     return createCustomChecker(function(isOptional) {
-      return creator.apply(null, [isOptional].concat(args))
+      return creator.apply(null, args);
     }, args, checkerCreator);
   }
 };
 
-exports.createSimpleChecker = createCustomCheckerCreator(function(isOptional, checkIsValid) {
+exports.createSimpleChecker = createCustomCheckerCreator(function(checkIsValid) {
   return function(props, propName, componentName, location) {
     if (!checkIsValid(props[propName])) {
       return new Error(
@@ -41,7 +41,7 @@ exports.createSimpleChecker = createCustomCheckerCreator(function(isOptional, ch
   };
 });
 
-types.exactShape = createCustomCheckerCreator(function(isOptional, shape) {
+types.exactShape = createCustomCheckerCreator(function(shape) {
   return function(props, propName, componentName, location) {
     var diff = keysDiff(shape, props[propName]);
     if (diff) {
