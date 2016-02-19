@@ -128,6 +128,8 @@ describe('zan', () => {
       expect(check(customValidator, null)).toBeAn(Error);
       expect(check(customValidator.isRequired, null)).toBeAn(Error);
       expect(check(customValidator.isOptional, null)).toBeFalsy();
+      expect(check(customValidator.isOptional.isRequired, null)).toBeAn(Error);
+      expect(check(customValidator.isOptional.isRequired.isOptional, null)).toBeFalsy();
     });
   });
 
