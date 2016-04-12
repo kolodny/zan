@@ -8,54 +8,66 @@ Object.keys(propTypes).forEach(function(key) {
     : wrapReactCheckerCreator(propTypes[key]);
 });
 
-var createCustomChecker = exports.createCustomChecker = function(creator, args, type) {
-  args = Array.prototype.slice.apply(args || []);
+function startsWith(str, substr) {
+  return str.slice(0, substr.length) === substr;
+}
+
+var createCustomChecker = exports.createCustomChecker = function(checker, args, type) {
+  const creatorArgs = Array.prototype.slice.apply(args || []);
   return createRequiredChecker(function(isOptional) {
-    var checker = creator(isOptional);
-    return addInspectors(isOptional, args, type, function(props, propName) {
-      if (isOptional && props[propName] == null) {
-        return null;
+    return addInspectors(isOptional, creatorArgs, type,
+      function(props, propName, componentName, location, propFullName) {
+        const value = props[propName];
+        if ((typeof value) === 'undefined' || value === null) {
+          return isOptional ? null : new Error(
+            'Required ' + location + ' `' + (propFullName || propName) +
+            '` was not specified in `' + componentName + '`.'
+          );
+        }
+        var error = checker.apply(null, arguments);
+        // Errors must be of the form "Invalid prop...." or "Required prop.... was not specified"
+        // If the error isn't either of these, we assume it to be a custom error and we prefix
+        // the error message with "invalid prop ...: your message".
+        if (error &&
+          !startsWith(error.message, 'Invalid ') &&
+          !startsWith(error.message, 'Required ')
+        ) {
+          error.message = (
+            'Invalid ' + location + ' `' + (propFullName || propName) + '` ' +
+            'of value `' + value + '` ' +
+            'supplied to `' + componentName + '`: ' +
+            error.message
+          );
+        }
+        return error;
       }
-      return checker.apply(null, arguments);
-    });
+    );
   });
 };
 
 var createCustomCheckerCreator = exports.createCustomCheckerCreator = function(creator) {
   return function checkerCreator() {
     var args = Array.prototype.slice.apply(arguments);
-    return createCustomChecker(function(isOptional) {
-      return creator.apply(null, args);
-    }, args, checkerCreator);
+    var checker = creator.apply(null, args);
+    checker = createCustomChecker(checker, args, checkerCreator);
+    return checker;
   }
 };
 
-exports.createSimpleChecker = createCustomCheckerCreator(function(checkIsValid) {
-  return function(props, propName, componentName, location) {
-    if (!checkIsValid(props[propName])) {
-      return new Error(
-        'Invalid ' + location + ' `' + propName + '` supplied to `' + componentName + '`.'
-      );
-    }
-    return null;
-  };
-});
-
-types.exactShape = createCustomCheckerCreator(function(shape) {
-  return function(props, propName, componentName, location) {
+types.exactShape = createCustomCheckerCreator(function (shape) {
+  return function (props, propName) {
     var diff = keysDiff(shape, props[propName]);
-    if (diff) {
-      return new Error('Invalid ' + location + ' `' + propName + '` supplied to `' + componentName + '`: ' + diff + '.');
-    }
-    return types.shape(shape).apply(this, arguments);
-  };
+    return diff
+      ? new Error(diff)
+      : types.shape(shape).apply(null, arguments);
+  }
 });
 
 exports.check = function(propTypeValidator) {
   var curriedCheck = function(value, label) {
     label = label || 'zan-check';
     var testObj = {value: value};
-    return propTypeValidator(testObj, 'value', label, 'prop');
+    return propTypeValidator(testObj, 'value', label, 'prop') || null;
   };
   return arguments.length > 1
     ? curriedCheck.apply(null, Array.prototype.slice.call(arguments, 1))
@@ -121,7 +133,7 @@ function addInspectors(isOptional, args, type, checker) {
 }
 
 function createRequiredChecker(makeChecker) {
-  const checker = makeChecker(false);
+  var checker = makeChecker(false);
   checker.isOptional = makeChecker(true);
   checker.isRequired = checker.isOptional.isRequired = checker;
   return checker;
@@ -142,4 +154,3 @@ function keysDiff(o1, o2) {
   if (right.length) errorMessages.push('extra keys: ' + JSON.stringify(right));
   return errorMessages.join('\n');
 }
-

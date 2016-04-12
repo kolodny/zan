@@ -3,7 +3,7 @@ import React from 'react';
 
 const nodeInstance = <div></div>;
 
-import { check, types, createSimpleChecker, recursive } from './';
+import { check, types, createCustomChecker, recursive } from './';
 
 const {
   any,
@@ -113,7 +113,11 @@ describe('zan', () => {
     });
 
     it('is able to produce custom checkers', function() {
-      var customValidator = createSimpleChecker(value => /(foo|bar)g?/.test(value) );
+      var customValidator = createCustomChecker((props, propName) => {
+        if (!(/(foo|bar)g?/.test(props[propName]))) {
+          return new Error('Value is not "foo" or "bar"');
+        }
+      });
       expect(check(customValidator, 'foo')).toBeFalsy();
       expect(check(customValidator, 'foog')).toBeFalsy();
       expect(check(customValidator, 'bar')).toBeFalsy();
@@ -124,7 +128,11 @@ describe('zan', () => {
 
   describe('custom validators', () => {
     it ('should have isOptional and isRequired extentions', () => {
-      var customValidator = createSimpleChecker(value => /(foo|bar)g?/.test(value) );
+      var customValidator = createCustomChecker((props, propName) => {
+        if (!(/(foo|bar)g?/.test(props[propName]))) {
+          return new Error('Value is not "foo" or "bar"');
+        }
+      });
       expect(check(customValidator, null)).toBeAn(Error);
       expect(check(customValidator.isRequired, null)).toBeAn(Error);
       expect(check(customValidator.isOptional, null)).toBeFalsy();
@@ -246,7 +254,7 @@ describe('zan', () => {
     it('can check at least one level', () => {
       const deepChecker = recursive({
         value: {
-          level1: string,
+          level1: string
         }
       }).value;
       expect( check(deepChecker, {level1: 123} )).toBeAn(Error);
