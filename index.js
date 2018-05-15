@@ -150,7 +150,11 @@ function keysDiff(o1, o2) {
   var right = Object.keys(map2);
   if (left.length === 0 && right.length === 0) return null;
   var errorMessages = [];
-  if (left.length) errorMessages.push('missing keys: ' + JSON.stringify(left));
-  if (right.length) errorMessages.push('extra keys: ' + JSON.stringify(right));
+  if (left.length) {
+    errorMessages.push('missing keys: ' + JSON.stringify(left) + ', expected: ' + JSON.stringify(Object.keys(o2)));
+  }
+  if (right.length) {
+    errorMessages.push('extra keys: ' + JSON.stringify(right) + ', expected: ' + JSON.stringify(Object.keys(o1)));
+  }
   return errorMessages.join('\n');
 }
